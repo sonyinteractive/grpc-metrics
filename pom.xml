@@ -6,13 +6,6 @@
     <artifactId>grpc-metrics</artifactId>
     <version>0.0.2-SNAPSHOT</version>
 
-    <scm>
-        <connection>scm:git:git@gitlab.gaikai.org:cgei/cloud/libraries/grpc-metrics.git</connection>
-        <developerConnection>scm:git:git@gitlab.gaikai.org:cgei/cloud/libraries/grpc-metrics.git</developerConnection>
-        <url>scm:git:git@gitlab.gaikai.org:cgei/cloud/libraries/grpc-metrics.git</url>
-        <tag>HEAD</tag>
-    </scm>
-
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
