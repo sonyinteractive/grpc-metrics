@@ -7,3 +7,5 @@ target/
 .idea
 dependency-reduced-pom.xml
 resources/
+pom.xml.releaseBackup
+release.properties
