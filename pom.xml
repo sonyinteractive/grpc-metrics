@@ -4,13 +4,13 @@
 
     <groupId>com.sony.cgei.grpc</groupId>
     <artifactId>grpc-metrics</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3-SNAPSHOT</version>
 
     <scm>
         <connection>scm:git:https://github.com/sonyinteractive/grpc-metrics.git</connection>
         <developerConnection>scm:git:git@github.com:sonyinteractive/grpc-metrics.git</developerConnection>
         <url>https://github.com/sonyinteractive/grpc-metrics</url>
-        <tag>grpc-metrics-0.0.2</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
