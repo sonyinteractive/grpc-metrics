@@ -1,100 +1,86 @@
 # gRPC Metrics
 
-## Overview
+Java 11 interceptor library that records Prometheus metrics for gRPC client and server calls. The library wraps gRPC calls with client/server interceptors, derives labels from the gRPC `MethodDescriptor`, and registers counters and latency histograms with the Prometheus Java client.
 
-This library facilitates scraping for gRPC service metrics. It currently supports the following metrics for both client and server use cases:
+## Start here
 
-* gRPC calls started - count
-* gRPC calls completed - count
-* Messages received - count
-* Messages sent - count
-* Completed gRPC calls latency - histogram
+- **Purpose:** add Prometheus gRPC metrics to Java services without coupling to a specific service framework.
+- **Runtime:** Java 11, gRPC Java API, Prometheus `simpleclient`.
+- **Main entry points:** [`ClientMonitoringInterceptor`](src/main/java/com/sony/cgei/grpc/metrics/interceptors/ClientMonitoringInterceptor.java), [`ServerMonitoringInterceptor`](src/main/java/com/sony/cgei/grpc/metrics/interceptors/ServerMonitoringInterceptor.java), and [`GrpcMetricsConfiguration`](src/main/java/com/sony/cgei/grpc/metrics/configurations/GrpcMetricsConfiguration.java).
+- **Build and test:** `mvn test`.
 
-Metrics naming follows the standard grpc_USECASE_METRIC, where USECASE is either server or client and metric is the actual metric (examples below).
-All metrics share the following labels: 
-* servicename
-* grpc_service
-* grpc_method
-* grpc_type
+## Documentation index
 
-Some metrics like count of calls completed have other labels like response `status`.
+| Topic | Description |
+| --- | --- |
+| [Usage guide](docs/usage.md) | How to add server/client interceptors and customize metric configuration. |
+| [Metrics reference](docs/metrics-reference.md) | Metric names, labels, default latency buckets, and event timing. |
+| [Architecture and code map](docs/architecture.md) | Interceptor, handler, listener, tracker, and collector responsibilities. |
+| [Testing](docs/testing.md) | Test layout, naming rules, and verification commands. |
+| [AI context guide](docs/ai-context.md) | Lightweight routing map for agent-assisted maintenance. |
+| [Contributing](CONTRIBUTING.md) | Contribution, review, testing, and release expectations. |
 
-## Metrics Examples
-
-### Calls started
-```
-# HELP grpc_server_started_count Total number of RPCs started
-# TYPE grpc_server_started_count counter
-grpc_server_started_count_total{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",} 2.0
-```
-
-### Calls completed
-```
-# HELP grpc_server_completed_count Total number of RPCs completed
-# TYPE grpc_server_completed_count counter
-grpc_server_completed_count_total{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",status="OK",} 2.0
-```
-
-### Calls failed
-```
-# HELP grpc_server_failed_count Total number of RPCs that failed
-# TYPE grpc_server_failed_count counter
-grpc_server_failed_count_total{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",} 1.0
-```
-
-### Messages received
-```
-# HELP grpc_server_message_received_count Total number of messages received
-# TYPE grpc_server_message_received_count counter
-grpc_server_message_received_count_total{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",} 2.0
-```
-
-### Messages sent
-```
-# HELP grpc_server_message_sent_count Total number of messages sent
-# TYPE grpc_server_message_sent_count counter
-grpc_server_message_sent_count_total{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",} 246.0
-```
-
-### Latency
-
-```
-# HELP grpc_server_completed_latency_seconds  Histogram of response latency in seconds of gRPC calls completed
-# TYPE grpc_server_completed_latency_seconds histogram
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="0.001",} 0.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="0.005",} 0.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="0.01",} 0.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="0.05",} 0.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="0.075",} 1.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="0.1",} 1.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="0.25",} 2.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="0.5",} 2.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="1.0",} 2.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="2.0",} 2.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="5.0",} 2.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="10.0",} 2.0
-grpc_server_completed_latency_seconds_bucket{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",le="+Inf",} 2.0
-grpc_server_completed_latency_seconds_count{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",} 2.0
-grpc_server_completed_latency_seconds_sum{servicename="example-service",grpc_service="example.v1.ExampleService",grpc_method="listItems",grpc_type="SERVER_STREAMING",} 0.22
-```
-
-## Usage
+## Quick usage
 
 ### Server interceptor
 
-```
-ServerMonitoringInterceptor monitoringInterceptor = new ServerMonitoringInterceptor(YOUR_SERVICE_NAME,
+```java
+ServerMonitoringInterceptor monitoringInterceptor = new ServerMonitoringInterceptor(
+    YOUR_SERVICE_NAME,
     GrpcMetricsConfiguration.defaultConfiguration());
-ServerBuilder serverBuilder = ServerBuilder.forPort(GRPC_PORT)
-    .addService(ServerInterceptors.intercept(YOURAPIIMPL.bindService(), monitoringInterceptor));
+
+ServerBuilder<?> serverBuilder = ServerBuilder.forPort(GRPC_PORT)
+    .addService(ServerInterceptors.intercept(YOUR_API_IMPL.bindService(), monitoringInterceptor));
 ```
 
 ### Client interceptor
 
-```
-ClientMonitoringInterceptor monitoringInterceptor = new ClientMonitoringInterceptor(YOUR_SERVICE_NAME,
+```java
+ClientMonitoringInterceptor monitoringInterceptor = new ClientMonitoringInterceptor(
+    YOUR_SERVICE_NAME,
     GrpcMetricsConfiguration.defaultConfiguration());
+
 ManagedChannel channel = ManagedChannelBuilder.forAddress(YOUR_HOST, YOUR_PORT)
     .intercept(monitoringInterceptor)
-    .usePlaintext().build();
+    .usePlaintext()
+    .build();
+```
+
+See the [usage guide](docs/usage.md) for custom `CollectorRegistry` and latency bucket examples.
+
+## Metrics summary
+
+Metrics use the Prometheus namespace `grpc` and the subsystem `server` or `client`:
+
+| Metric family | Type | Description | Extra labels |
+| --- | --- | --- | --- |
+| `grpc_server_started_count` / `grpc_client_started_count` | Counter | RPCs started. | None |
+| `grpc_server_completed_count` / `grpc_client_completed_count` | Counter | RPCs completed. | `status` |
+| `grpc_server_failed_count` / `grpc_client_failed_count` | Counter | RPCs completed with non-`OK` status. | None |
+| `grpc_server_message_received_count` / `grpc_client_message_received_count` | Counter | Messages received. | None |
+| `grpc_server_message_sent_count` / `grpc_client_message_sent_count` | Counter | Messages sent. | None |
+| `grpc_server_completed_latency_seconds` / `grpc_client_completed_latency_seconds` | Histogram | Completed call latency in seconds. | None |
+
+All metric families include `servicename`, `grpc_service`, `grpc_method`, and `grpc_type` labels. In Prometheus text exposition, counter samples are emitted with the usual `_total` suffix. See the [metrics reference](docs/metrics-reference.md) for details.
+
+## Repository map
+
+| Path | Purpose |
+| --- | --- |
+| [`pom.xml`](pom.xml) | Maven coordinates, Java version, and dependencies. |
+| [`src/main/java/com/sony/cgei/grpc/metrics/configurations`](src/main/java/com/sony/cgei/grpc/metrics/configurations) | Metrics configuration and Prometheus registry selection. |
+| [`src/main/java/com/sony/cgei/grpc/metrics/interceptors`](src/main/java/com/sony/cgei/grpc/metrics/interceptors) | Public gRPC client/server interceptors. |
+| [`src/main/java/com/sony/cgei/grpc/metrics/handlers`](src/main/java/com/sony/cgei/grpc/metrics/handlers) | Forwarding client/server call wrappers that record start, send, close, and latency events. |
+| [`src/main/java/com/sony/cgei/grpc/metrics/listeners`](src/main/java/com/sony/cgei/grpc/metrics/listeners) | Forwarding listeners that record inbound messages and client close events. |
+| [`src/main/java/com/sony/cgei/grpc/metrics/models`](src/main/java/com/sony/cgei/grpc/metrics/models) | Metric family registration and gRPC method label extraction. |
+| [`src/main/java/com/sony/cgei/grpc/metrics/trackers`](src/main/java/com/sony/cgei/grpc/metrics/trackers) | Label application and metric updates. |
+| [`src/main/java/com/sony/cgei/grpc/metrics/util`](src/main/java/com/sony/cgei/grpc/metrics/util) | Prometheus collector builder helpers. |
+| [`src/test/java`](src/test/java) | JUnit/Mockito unit tests. |
+| [`docs`](docs) | Maintainer and user documentation. |
+
+## Verify changes
+
+```bash
+mvn test
+python3 /Users/rcortezbellottideoli/.codex/skills/project-docs/scripts/check-docs-links.py .
 ```
